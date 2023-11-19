@@ -1,4 +1,4 @@
-import { Modal } from 'components/Modal/Modal';
+import { ModalComponent } from 'components/Modal/Modal';
 import { Item, Image } from './ImageGalleryItem.styled';
 import { useState } from 'react';
 
@@ -11,7 +11,8 @@ export const ImageGalleryItem = ({ id, webformatURL, tags, largeImageURL }) => {
     <Item key={id}>
       <Image src={webformatURL} alt={tags} onClick={toggleModal} />
       {showModal && (
-        <Modal
+        <ModalComponent
+          isModalOpen={showModal}
           onClose={toggleModal}
           largeImageURL={largeImageURL}
           tags={tags}
