@@ -1,82 +1,69 @@
 import { Toaster } from 'react-hot-toast';
-import { Component } from 'react';
 import { Seachbar } from '../Searchbar/Searchbar';
 import { ImageGallery } from '../ImageGallery/ImageGallery';
 import { Loader } from '../Loader/Loader';
 import { Button } from './App.styled';
-import { articlesWithQuery } from '../services/Api';
+import { articlesWithQuery } from 'components/services/Api';
+import { useState, useEffect } from 'react';
 
-export class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    largeImage: '',
-    isLoading: false,
-    error: null,
-    total: 0,
-  };
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [total, setTotal] = useState(0);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { query, page } = this.state;
+  useEffect(() => {
+    const getPhotos = async () => {
+      setIsLoading(true);
 
-    // перевіряємо попереднє і поточне ім'я
-    if (page !== prevState.page || query !== prevState.query) {
-      this.getPhotos(query, page);
-    }
-  }
-  getPhotos = async (query, page) => {
-    this.setState({ isLoading: true });
-    try {
-      // передаємо запит та сторінку та сторінку функцію запиту
-      const { hits, totalHits } = await articlesWithQuery(query, page);
-      if (hits.length === 0) {
-        return alert('We dont find');
+      try {
+        const { hits, totalHits } = await articlesWithQuery(query, page);
+
+        if (hits.length === 0) {
+          return alert('We dont find');
+        }
+
+        setImages(prevImages => [...prevImages, ...hits]);
+        setTotal(totalHits);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
       }
-      this.setState(prevState => ({
-        images: [...prevState.images, ...hits],
-        total: totalHits,
-      }));
-    } catch (error) {
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ isLoading: false });
+    };
+
+    if (page !== 1 || query !== '') {
+      getPhotos();
+    }
+  }, [page, query]);
+
+  const handleFormSubmit = newQuery => {
+    if (query !== newQuery) {
+      setQuery(newQuery);
+      setImages([]);
+      setPage(1);
     }
   };
 
-  // коли запит відрізняється, з cat=>dog, записуємо новий запит, images та page скидуємо
-  handleFormSubmit = query => {
-    if (this.state.query !== query) {
-      this.setState({
-        query,
-        images: [],
-        page: 1,
-      });
-    }
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
+  const allPage = total / images.length;
 
-  render() {
-    const { images, isLoading, error, total } = this.state;
-    const allPage = total / images.length;
-    return (
-      <>
-        {error && <h1>Whoops, something went wrong</h1>}
-        <Seachbar onSubmit={this.handleFormSubmit} />
-        {isLoading && <Loader />}
-        {images.length > 0 && <ImageGallery data={images} />}
+  return (
+    <>
+      {error && <h1>Whoops, something went wrong</h1>}
+      <Seachbar onSubmit={handleFormSubmit} />
+      {isLoading && <Loader />}
+      {images.length > 0 && <ImageGallery data={images} />}
 
-        {allPage > 1 && !isLoading && images.length > 0 && (
-          <Button onClick={this.handleLoadMore}>Load more</Button>
-        )}
-        {/* {isLoading ? (<Loader />) : ( && (<Button onClick={this.handleLoadMore}>Load more</Button>))} */}
-        <Toaster position="top-center" />
-      </>
-    );
-  }
-}
+      {allPage > 1 && !isLoading && images.length > 0 && (
+        <Button onClick={handleLoadMore}>Load more</Button>
+      )}
+      <Toaster position="top-center" />
+    </>
+  );
+};
