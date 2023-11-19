@@ -1,4 +1,4 @@
-import { Overlay, ModalWindow } from './Modal.styled';
+import { ModalWindow } from './Modal.styled';
 import Modal from 'react-modal';
 
 const customStyles = {
